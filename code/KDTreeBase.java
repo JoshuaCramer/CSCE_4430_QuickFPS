@@ -2,11 +2,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 //the original code's version is not abstract but I am pretty sure this class is not supposed to be used on its own
 abstract public class KDTreeBase {
-    private int DIM = 3;    //replaces a macro in the original code
+    private static int DIM = 3;    //replaces a macro in the original code
 
-    public Integer pointSize;
-    public Integer memory_ops = 0;
-    public Integer mult_ops = 0;
+    public int pointSize;
+    public int memory_ops = 0;
+    public int mult_ops = 0;
     public ArrayList<Point> sample_points;
     public KDNode root_ = null;
     public ArrayList<Point> points_;
@@ -19,19 +19,21 @@ abstract public class KDTreeBase {
 
     public void buildKDTree() {
         Interval[] bbox = new Interval[DIM];
+        for (int i = 0; i < DIM; i++) bbox[i] = new Interval();
         int left = 0;
         int right = pointSize;
         computeBoundingBox(left, right, bbox);
         this.root_ = divideTree(left, right, bbox, 0);
     }
 
-    KDNode get_root() {return this.root_; }
+    public KDNode get_root() {return this.root_; }
 
     KDNode divideTree(int left, int right, Interval[] bbox_ptr, int curr_high) {    //bbox_ptr is reference variable
         KDNode node = new KDNode();
         //copy bounding box array
         for(int i = 0; i < DIM; i++) {
-            node.bbox[i] = bbox_ptr[i];
+            node.bbox[i].low = bbox_ptr[i].low;
+            node.bbox[i].high = bbox_ptr[i].high;
         }
         
         int count = right - left;
@@ -44,26 +46,31 @@ abstract public class KDTreeBase {
         } else {
             Integer split_dim = 0;
             Float split_val = 0.0f;
-            findSplitDim(split_dim, bbox_ptr);
-            qSelectMedian(split_dim, left, right, split_val);
+
+            split_dim = findSplitDim(bbox_ptr);
+
+            // Unable to update via reference, so we assign directly
+            split_val = qSelectMedian(split_dim, left, right);
 
             Integer split_delta = 0;
-            planeSplit(left, right, split_dim, split_val, split_delta);
+            split_delta = planeSplit(left, right, split_dim, split_val);
 
-            Interval[] bbox_cur = new Interval[3];
+            Interval[] bbox_cur = new Interval[] {new Interval(), new Interval(), new Interval()};
             computeBoundingBox(left, left + split_delta, bbox_cur);
             node.left = divideTree(left, left + split_delta, bbox_cur, curr_high + 1);
+
+            bbox_cur = new Interval[] {new Interval(), new Interval(), new Interval()};
             computeBoundingBox(left + split_delta, right, bbox_cur);
             node.right = divideTree(left + split_delta, right, bbox_cur, curr_high + 1);
             return node;
         }
     }
     
-    public void planeSplit(int left, int right, int split_dim, float split_val, Integer lim1) { //lim1 is reference variable
+    public int planeSplit(int left, int right, int split_dim, float split_val) {
         int start = left;
-        int end = right + 1;
+        int end = right - 1;
 
-        while(true) {
+        while(start <= end) {
             while(start <= end && points_.get(start).pos[split_dim] < split_val) {
                 ++start;
             }     
@@ -76,22 +83,24 @@ abstract public class KDTreeBase {
             ++start;
             --end;
         }
-        lim1 = start - left;
+        int lim1 = start - left;
         if(start == left) lim1 = 1;
-        if(start == right) lim1 = (right - left - 1);
+        else if(start == right) lim1 = (right - left - 1);
+        return lim1;
     }
 
-    public void qSelectMedian(int dim, int left, int right, Float median_value) {   //median_value is reference variable
+    public float qSelectMedian(int dim, int left, int right) {   //median_value is reference variable
         float sum = 0;
         for (int i = left; i < right; i++) {
             sum += points_.get(i).pos[dim];
         }
-        median_value = sum / (right - left);
+        return sum / (right - left);
     }
 
-    public void findSplitDim(Integer best_dim, Interval[] bbox_ptr) {   //both are reference variables
+    public int findSplitDim(Interval[] bbox_ptr) {   //both are reference variables
         float min_, max_;
         float span = 0.0f;
+        int best_dim = 0;
 
         for(int cur_dim = 0; cur_dim < DIM; cur_dim++) {
             min_ = bbox_ptr[cur_dim].low;
@@ -102,6 +111,8 @@ abstract public class KDTreeBase {
                 span = (max_ - min_);
             }
         }
+
+        return best_dim;
     }
 
     void computeBoundingBox(int left, int right, Interval[] bbox_ptr) { //bbox_ptr is reference variable
