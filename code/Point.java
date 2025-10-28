@@ -36,10 +36,10 @@ public class Point implements Comparable<Point> {
     }
 
     public float distance(Point b) {
-        float dx = this.pos[0] - b.pos[0];
-        float dy = this.pos[1] - b.pos[1];
-        float dz = this.pos[2] - b.pos[2];
-        return dx * dx + dy * dy + dz * dz;
+        float dx = Utils.pow2(this.pos[0] - b.pos[0]);
+        float dy = Utils.pow2(this.pos[1] - b.pos[1]);
+        float dz = Utils.pow2(this.pos[2] - b.pos[2]);
+        return dx + dy + dz;
     }
 
     public float updatedistance(Point ref) {
