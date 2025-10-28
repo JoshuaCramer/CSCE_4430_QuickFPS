@@ -17,4 +17,12 @@ public class KDNode {
     void init(Point ref) {  //ref is reference variable
 
     }
+
+    void send_delay_point(Point point) {    //point is reference variable
+
+    }
+
+    void update_distance(int memory_ops, int mult_ops) {  //both are reference variables
+
+    }
 }

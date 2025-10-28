@@ -1,5 +1,6 @@
 %.class: %.java
-	javac *.java -d
+	javac *.java -d "out"
+	cp ./manifest.txt ./out
 
-jar: *.class
-	jar cfm QuickFPS.jar manifest.txt *.class
+jar: $(wildcard out/*.class)
+	cd out && jar cfm QuickFPS.jar manifest.txt *.class && cd../
