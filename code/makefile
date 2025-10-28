@@ -1,5 +1,5 @@
 %.class: %.java
-	javac *.java
+	javac *.java -d
 
 jar: *.class
 	jar cfm QuickFPS.jar manifest.txt *.class
