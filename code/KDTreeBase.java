@@ -7,9 +7,9 @@ abstract public class KDTreeBase {
     public Integer pointSize;
     public Integer memory_ops = 0;
     public Integer mult_ops = 0;
-    public ArrayList<Point> sample_points;
+    public ArrayList<Point> sample_points = new ArrayList<Point>();
     public KDNode root_ = null;
-    public ArrayList<Point> points_;
+    public ArrayList<Point> points_ = new ArrayList<Point>();
 
     public KDTreeBase(ArrayList<Point> data, int pointSize, ArrayList<Point> samplePoints) {
         this.pointSize = pointSize;

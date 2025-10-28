@@ -3,7 +3,7 @@ import java.util.ArrayList;
 //this class is mostly just a placeholder for now
 public class KDLineTree extends KDTreeBase {
 
-    public ArrayList<KDNode> KDNode_list;
+    public ArrayList<KDNode> KDNode_list = new ArrayList<KDNode>();
     public int high_;
 
     KDLineTree(ArrayList<Point> data, int pointSize, int treeHigh, ArrayList<Point> samplePoints) {
