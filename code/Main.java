@@ -72,7 +72,7 @@ public class Main {
         if (covered != pts.size()) {
             System.err.println("ERROR: Leaf ranges do not cover all points!");
         } else {
-            System.out.println("Coverage OK ✅");
+            System.out.println("Coverage Good");
         }
     }
 
