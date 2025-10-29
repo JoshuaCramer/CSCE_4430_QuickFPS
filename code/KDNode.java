@@ -7,7 +7,7 @@ public class KDNode {
     public int pointRight = 0;
     public int idx;
 
-    Interval[] bbox;
+    Interval[] bbox = new Interval[] {new Interval(), new Interval(), new Interval()};
     ArrayList<Point> waitpoints = new ArrayList<Point>();
     ArrayList<Point> delaypoints = new ArrayList<Point>();
     Point max_point;
