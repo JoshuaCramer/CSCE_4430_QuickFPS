@@ -1,15 +1,16 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicInteger;
 //the original code's version is not abstract but I am pretty sure this class is not supposed to be used on its own
 abstract public class KDTreeBase {
     private static int DIM = 3;    //replaces a macro in the original code
 
-    public int pointSize;
-    public int memory_ops = 0;
-    public int mult_ops = 0;
-    public ArrayList<Point> sample_points;
+    public Integer pointSize;
+    public AtomicInteger memory_ops = new AtomicInteger(0);
+    public AtomicInteger mult_ops = new AtomicInteger(0);
+    public ArrayList<Point> sample_points = new ArrayList<Point>();
     public KDNode root_ = null;
-    public ArrayList<Point> points_;
+    public ArrayList<Point> points_ = new ArrayList<Point>();
 
     public KDTreeBase(ArrayList<Point> data, int pointSize, ArrayList<Point> samplePoints) {
         this.pointSize = pointSize;

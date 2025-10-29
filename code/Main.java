@@ -39,7 +39,7 @@ public class Main {
         ArrayList<Point> samples = new ArrayList<>(Collections.nCopies(4, new Point()));
 
         // 2) Build the tree
-        KDLineTree tree = new KDLineTree(pts, pts.size(), samples);
+        KDLineTree tree = new KDLineTree(pts, pts.size(), 0, samples);
         tree.buildKDTree();
 
         // 3) Print quick summary
