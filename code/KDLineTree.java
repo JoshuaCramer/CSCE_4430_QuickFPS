@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 
-//this class is mostly just a placeholder for now
 public class KDLineTree extends KDTreeBase {
 
     public ArrayList<KDNode> KDNode_list = new ArrayList<KDNode>();
