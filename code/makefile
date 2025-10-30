@@ -21,7 +21,7 @@ $(OUT_DIR)/.compiled: $(SOURCES)
 	@touch $@
 
 run: build
-	$(JAVA) -cp $(OUT_DIR) $(MAIN_CLASS)
+	$(JAVA) -cp $(OUT_DIR) $(MAIN_CLASS) 100 data/000000.txt
 
 jar: build
 	@echo "Main-Class: $(MAIN_CLASS)" > MANIFEST.MF

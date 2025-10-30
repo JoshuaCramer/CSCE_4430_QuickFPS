@@ -29,7 +29,7 @@ abstract public class KDTreeBase {
 
     public KDNode get_root() {return this.root_; }
 
-    KDNode divideTree(int left, int right, Interval[] bbox_ptr, int curr_high) {    //bbox_ptr is reference variable
+    public KDNode divideTree(int left, int right, Interval[] bbox_ptr, int curr_high) {    //bbox_ptr is reference variable
         KDNode node = new KDNode();
         //copy bounding box array
         for(int i = 0; i < DIM; i++) {
@@ -116,7 +116,7 @@ abstract public class KDTreeBase {
         return best_dim;
     }
 
-    void computeBoundingBox(int left, int right, Interval[] bbox_ptr) { //bbox_ptr is reference variable
+    public void computeBoundingBox(int left, int right, Interval[] bbox_ptr) { //bbox_ptr is reference variable
         float min_val_0 = points_.get(left).get(0);
         float max_val_0 = points_.get(left).get(0);
         float min_val_1 = points_.get(left).get(1);
