@@ -1,114 +1,122 @@
-import java.util.ArrayDeque;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
-import java.util.Random;
+import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args){
-        // Point class test
-        Point a = new Point(0f, 0f, 0f, 1e20f, 1);
-        Point b = new Point(1f, 2f, 5f, 1e20f, 2);
-
-        System.out.println("Point A: " + a);
-        System.out.println("Point B: " + b);
-
-        float dist = a.distance(b);
-        System.out.println("Squared Distance between A and B: " + dist);
-
-        a.updatedistance(b);
-        System.out.println("A after updateDistance: " + a);
-
-        a.reset();
-        System.out.println("A after reset: " + a);
-
-        // KDTreeBase class test
-        // 1) Generate some random points
-        ArrayList<Point> pts = new ArrayList<>();
-        Random r = new Random(42);
-        for (int i = 0; i < 40; i++) {
-            pts.add(new Point(
-                r.nextFloat() * 100f,
-                r.nextFloat() * 100f,
-                r.nextFloat() * 100f,
-                1e20f, i
-            ));
+    public static void main(String[] args) {
+        if (args.length < 2) {
+            System.out.println("Usage: java Main <sample_number> <point_file> [treeHigh]");
+            return;
         }
 
-        // sample_points can be empty placeholders for now
-        ArrayList<Point> samples = new ArrayList<>(Collections.nCopies(4, new Point()));
+        final int sampleNumber = Integer.parseInt(args[0]);
+        final String filePath = args[1];
+        final int treeHigh = (args.length >= 3) ? Integer.parseInt(args[2]) : 6;
 
-        // 2) Build the tree
-        KDLineTree tree = new KDLineTree(pts, pts.size(), 0, samples);
-        tree.buildKDTree();
+        ArrayList<Point> points = loadPoints(filePath);
+        if (points == null || points.isEmpty()) {
+            System.out.println("No points loaded from: " + filePath);
+            return;
+        }
 
-        // 3) Print quick summary
-        KDNode root = tree.get_root();
-        System.out.println("KD-tree built!");
-        printBBox("Root bbox", root.bbox);
+        runKDTreeAndReport(points, sampleNumber, filePath); // Run baseline KDTree
+        System.out.println("-------------------------");
+        runKDLineTreeAndReport(points, sampleNumber, treeHigh, filePath); // Run KDLineTree
+    }
 
-        // 4) Walk the tree and check leaf ranges + bbox correctness
-        int leaves = 0, nodes = 0, covered = 0;
-        Deque<KDNode> stack = new ArrayDeque<>();
-        stack.push(root);
-        while (!stack.isEmpty()) {
-            KDNode n = stack.pop();
-            nodes++;
-            if (n.left == null && n.right == null) {
-                leaves++;
-                covered += (n.pointRight - n.pointLeft);
-                System.out.printf("Leaf range: [%d, %d)%n", n.pointLeft, n.pointRight);
-                // Verify bbox matches data for this leaf
-                verifyBBoxAgainstData(pts, n);
-            } else {
-                if (n.right != null) stack.push(n.right);
-                if (n.left  != null) stack.push(n.left);
+    private static ArrayList<Point> loadPoints(String filename) {
+        ArrayList<Point> points = new ArrayList<>();
+        try (Scanner sc = new Scanner(new File(filename))) {
+            int id = 0;
+            while (sc.hasNextFloat()) {
+                float x = sc.nextFloat();
+                if (!sc.hasNextFloat()) break;
+                float y = sc.nextFloat();
+                if (!sc.hasNextFloat()) break;
+                float z = sc.nextFloat();
+                points.add(new Point(x, y, z, Float.MAX_VALUE, id++));
             }
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found: " + filename);
+            return null;
         }
-
-        // 5) Sanity checks
-        System.out.printf("Nodes: %d, Leaves: %d, Covered: %d of %d%n",
-                nodes, leaves, covered, pts.size());
-        if (covered != pts.size()) {
-            System.err.println("ERROR: Leaf ranges do not cover all points!");
-        } else {
-            System.out.println("Coverage OK ✅");
-        }
+        return points;
     }
 
-    private static void printBBox(String label, Interval[] b) {
-        System.out.printf("%s: x[%.2f, %.2f] y[%.2f, %.2f] z[%.2f, %.2f]%n",
-            label, b[0].low, b[0].high, b[1].low, b[1].high, b[2].low, b[2].high);
+    private static void runKDTreeAndReport(ArrayList<Point> points, int sampleNumber, String paramPath) {
+
+        ArrayList<Point> samplePoints = new ArrayList<>(Collections.nCopies(sampleNumber, null));
+
+        // Build
+        long t0 = System.nanoTime();
+        KDTree tree = new KDTree(points, points.size(), samplePoints);
+        tree.buildKDTree();
+        long t1 = System.nanoTime();
+
+        // Sample
+        tree.init(points.get(0));
+        long t2 = System.nanoTime();
+        tree.sample(sampleNumber);
+        long t3 = System.nanoTime();
+
+        int checksum = tree.verify(sampleNumber);
+
+        printReport(
+                "Baseline", /*high*/ -1,
+                points.size(), sampleNumber,
+                (t1 - t0), (t3 - t2),
+                checksum, paramPath
+        );
     }
 
-    // Recompute min/max from the points in this node’s range and compare with node.bbox
-    private static void verifyBBoxAgainstData(ArrayList<Point> pts, KDNode n) {
-        float min0 = Float.POSITIVE_INFINITY, max0 = Float.NEGATIVE_INFINITY;
-        float min1 = Float.POSITIVE_INFINITY, max1 = Float.NEGATIVE_INFINITY;
-        float min2 = Float.POSITIVE_INFINITY, max2 = Float.NEGATIVE_INFINITY;
+    private static int runKDLineTreeAndReport( ArrayList<Point> points, int sampleNumber, int treeHigh, String paramPath) {
 
-        for (int i = n.pointLeft; i < n.pointRight; i++) {
-            float[] p = pts.get(i).pos;
-            if (p[0] < min0) min0 = p[0]; if (p[0] > max0) max0 = p[0];
-            if (p[1] < min1) min1 = p[1]; if (p[1] > max1) max1 = p[1];
-            if (p[2] < min2) min2 = p[2]; if (p[2] > max2) max2 = p[2];
-        }
+        ArrayList<Point> samplePoints = new ArrayList<>(Collections.nCopies(sampleNumber, null));
 
-        boolean ok =
-            approxEq(min0, n.bbox[0].low)  && approxEq(max0, n.bbox[0].high) &&
-            approxEq(min1, n.bbox[1].low)  && approxEq(max1, n.bbox[1].high) &&
-            approxEq(min2, n.bbox[2].low)  && approxEq(max2, n.bbox[2].high);
+        // Build timing
+        long t0 = System.nanoTime();
+        KDLineTree tree = new KDLineTree(points, points.size(), treeHigh, samplePoints);
+        tree.buildKDTree();
+        long t1 = System.nanoTime();
 
-        if (!ok) {
-            System.err.printf("BBox mismatch in leaf [%d,%d):%n", n.pointLeft, n.pointRight);
-            printBBox("  node", n.bbox);
-            System.err.printf("  data: x[%.2f, %.2f] y[%.2f, %.2f] z[%.2f, %.2f]%n",
-                min0, max0, min1, max1, min2, max2);
-        }
+        // Sampling timing
+        tree.init(points.get(0));
+        long t2 = System.nanoTime();
+        tree.sample(sampleNumber);
+        long t3 = System.nanoTime();
+
+        // Verify/checksum
+        int checksum = tree.verify(sampleNumber);
+
+        printReport(
+                "KDLineTree", treeHigh,
+                points.size(), sampleNumber,
+                (t1 - t0),          // build time (ns)
+                (t3 - t2),          // run time (ns)
+                checksum, paramPath
+        );
+
+        return checksum;
     }
 
-    private static boolean approxEq(float a, float b) {
-        return Math.abs(a - b) <= 1e-5f;
+    private static void printReport(
+            String type, int high, int totalPoints, int sampleNumber,
+            long buildTimeNs, long runTimeNs,
+            long checksum, String paramPath) {
+
+        double buildUs = buildTimeNs / 1_000.0;
+        double runUs   = runTimeNs   / 1_000.0;
+
+        System.out.println("Report:");
+        System.out.printf("  Type   :%-10s High:%d%n", type, high);
+        System.out.printf("  Points :%d%n", totalPoints);
+        System.out.printf("  NPoint :%d%n", sampleNumber);
+        System.out.printf("  RunTime:%.0fus%n", runUs);
+        System.out.printf("  Build  :%.0fus%n", buildUs);
+        System.out.printf("  Check  :%d%n", checksum);
+        System.out.printf("  Param  :%s%n", paramPath);
+        System.out.printf("  Timestamp:%s%n", java.time.ZonedDateTime.now().toString());
     }
-    
 }

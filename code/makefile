@@ -1,5 +1,33 @@
-%.class: *.java
-	javac *.java -d "out" && copy manifest.txt out
+# ------- config -------
+SRC_DIR := .
+OUT_DIR := out
+MAIN_CLASS := Main
+JAR := app.jar
 
-jar: $(wildcard out/*.class)
-	cd out && jar cfm QuickFPS.jar manifest.txt *.class && cd../
+JAVA := java
+JAVAC := javac
+
+# Find all .java files under SRC_DIR
+SOURCES := $(wildcard $(SRC_DIR)/*.java)
+
+# ------- phony targets -------
+.PHONY: build run jar clean
+
+build: $(OUT_DIR)/.compiled
+
+$(OUT_DIR)/.compiled: $(SOURCES)
+	@mkdir -p $(OUT_DIR)
+	$(JAVAC) -d $(OUT_DIR) $(SOURCES)
+	@touch $@
+
+run: build
+	$(JAVA) -cp $(OUT_DIR) $(MAIN_CLASS) 100 data/000000.txt
+
+jar: build
+	@echo "Main-Class: $(MAIN_CLASS)" > MANIFEST.MF
+	@cd $(OUT_DIR) && jar cfm ../$(JAR) ../MANIFEST.MF .
+	@rm -f MANIFEST.MF
+	@echo "Built $(JAR)"
+
+clean:
+	rm -rf $(OUT_DIR) $(JAR)
