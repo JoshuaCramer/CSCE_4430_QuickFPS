@@ -8,7 +8,7 @@ JAVA := java
 JAVAC := javac
 
 # Find all .java files under SRC_DIR
-SOURCES := $(shell find $(SRC_DIR) -name "*.java")
+SOURCES := $(wildcard $(SRC_DIR)/*.java)
 
 # ------- phony targets -------
 .PHONY: build run jar clean
